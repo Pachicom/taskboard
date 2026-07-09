@@ -1,5 +1,7 @@
+const API_URL = "https://taskboard-02bw.onrender.com";
+
 async function loadTasks() {
-  const res = await fetch("http://127.0.0.1:5000/tasks");
+  const res = await fetch(`${API_URL}/tasks`, { credentials: "include" });
   const tasks = await res.json();
 
   document.querySelectorAll(".tasks").forEach(el => el.innerHTML = "");
@@ -23,7 +25,7 @@ async function loadTasks() {
       const input = document.createElement("input");
       input.value = task.title;
       input.addEventListener("blur", async () => {
-        await fetch(`http://127.0.0.1:5000/tasks/${task.id}`, {
+        await fetch(`${API_URL}/tasks/${task.id}`, {
           method: "PUT",
           headers: {"Content-Type": "application/json"},
           body: JSON.stringify({title: input.value, status: task.status})
@@ -43,7 +45,7 @@ async function loadTasks() {
       div.style.transform = "scale(0.8)";
       div.style.opacity = "0";
       setTimeout(async () => {
-        await fetch(`http://127.0.0.1:5000/tasks/${task.id}`, { method: "DELETE" });
+        await fetch(`${API_URL}/tasks/${task.id}`, { method: "DELETE" });
         loadTasks();
       }, 300);
     });
@@ -54,18 +56,19 @@ async function loadTasks() {
     document.querySelector(`[data-status="${task.status}"] .tasks`).appendChild(div);
   });
 
-  document.querySelector('[data-status="todo"] h2').textContent = `To Do (${counters.todo})`;
-  document.querySelector('[data-status="inprogress"] h2').textContent = `In Progress (${counters.inprogress})`;
-  document.querySelector('[data-status="done"] h2').textContent = `Done (${counters.done})`;
+  document.querySelector('[data-status="todo"] h2').textContent = `${translations[currentLang].todo} (${counters.todo})`;
+  document.querySelector('[data-status="inprogress"] h2').textContent = `${translations[currentLang].inprogress} (${counters.inprogress})`;
+  document.querySelector('[data-status="done"] h2').textContent = `${translations[currentLang].done} (${counters.done})`;
 }
 
 async function addTask() {
   const title = document.getElementById("newTask").value;
   if (!title) return;
-  await fetch("http://127.0.0.1:5000/tasks", {
+  await fetch(`${API_URL}/tasks`, {
     method: "POST",
     headers: {"Content-Type": "application/json"},
-    body: JSON.stringify({title})
+    body: JSON.stringify({title}),
+    credentials: "include"
   });
   document.getElementById("newTask").value = "";
   loadTasks();
@@ -75,15 +78,17 @@ document.querySelectorAll(".column").forEach(col => {
   col.addEventListener("dragover", e => e.preventDefault());
   col.addEventListener("drop", async e => {
     const id = e.dataTransfer.getData("id");
-    await fetch(`http://127.0.0.1:5000/tasks/${id}`, {
+    await fetch(`${API_URL}/tasks/${id}`, {
       method: "PUT",
       headers: {"Content-Type": "application/json"},
-      body: JSON.stringify({status: col.dataset.status})
+      body: JSON.stringify({status: col.dataset.status}),
+      credentials: "include"
     });
     loadTasks();
   });
 });
 
+// 🌙 переключатель темы
 const themeBtn = document.getElementById("toggleTheme");
 themeBtn.addEventListener("click", () => {
   document.body.classList.toggle("dark");
@@ -94,6 +99,7 @@ if (localStorage.getItem("theme") === "dark") {
   document.body.classList.add("dark");
 }
 
+// 🌐 локализация
 const translations = {
   en: { 
     todo: "To Do", 
@@ -134,5 +140,4 @@ document.getElementById("toggleLang").addEventListener("click", () => {
 });
 
 updateLanguage();
-
 loadTasks();
